@@ -10,6 +10,8 @@
 > [SparseDrive: End-to-End Autonomous Driving via Sparse Scene Representation](https://arxiv.org/abs/2405.19620) \
 > [Chinese Interpretation of the Papers](https://zhuanlan.zhihu.com/p/637096473)
 
+**【2026/04】The integrated version of Sparse4D (v1/v2/v3+lidar) was accepted by TPAMI. Please refer to: [link](https://ieeexplore.ieee.org/abstract/document/11498453/).**
+
 **【2024/06】Our follow-up project, SparseDrive (an end-to-end planning model based on the sparse framework), has been released!!! [arxiv](https://arxiv.org/abs/2405.19620) & [github](https://github.com/swc-17/SparseDrive).**
 
 ## Overall Architecture
