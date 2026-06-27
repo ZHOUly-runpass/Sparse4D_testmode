@@ -1,3 +1,6 @@
 *.pyc
 *.npy
 *.pth
+__pycache__/
+/data/
+/outputs/
