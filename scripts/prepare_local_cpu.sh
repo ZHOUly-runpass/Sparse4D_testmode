@@ -1,8 +1,13 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
 
-cd /mnt/d/e2eproject/Sparse4D
-export PYTHONPATH=$PWD:$PYTHONPATH
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+DEFAULT_NUSCENES_ROOT="$(dirname "$REPO_ROOT")/datasets/nuscenes"
+NUSCENES_ROOT="${NUSCENES_ROOT:-$DEFAULT_NUSCENES_ROOT}"
+
+cd "$REPO_ROOT"
+export PYTHONPATH="$PWD:${PYTHONPATH:-}"
 
 echo "[INFO] Current python:"
 which python
@@ -14,14 +19,23 @@ mkdir -p outputs
 
 echo "[0/5] Check nuScenes-mini path"
 
-if [ ! -d "data/nuscenes" ]; then
-  echo "[INFO] data/nuscenes not found, creating symlink..."
-  ln -s /mnt/d/e2eproject/datasets/nuscenes data/nuscenes
+if [ -L "data/nuscenes" ] && [ ! -e "data/nuscenes" ]; then
+  echo "[INFO] removing broken data/nuscenes symlink"
+  rm "data/nuscenes"
+fi
+
+if [ ! -e "data/nuscenes" ]; then
+  if [ ! -d "$NUSCENES_ROOT" ]; then
+    echo "[ERROR] nuScenes root not found: $NUSCENES_ROOT"
+    echo "Set NUSCENES_ROOT to the dataset directory and retry."
+    exit 1
+  fi
+  ln -s "$NUSCENES_ROOT" data/nuscenes
 fi
 
 if [ ! -d "data/nuscenes/v1.0-mini" ]; then
   echo "[ERROR] data/nuscenes/v1.0-mini not found."
-  echo "Expected path: /mnt/d/e2eproject/datasets/nuscenes/v1.0-mini"
+  echo "Resolved nuScenes root: $NUSCENES_ROOT"
   exit 1
 fi
 

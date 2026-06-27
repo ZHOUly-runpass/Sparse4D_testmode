@@ -284,6 +284,8 @@ class NuScenes3DDetTrackDataset(Dataset):
             ego2global_translation=info["ego2global_translation"],
             ego2global_rotation=info["ego2global_rotation"],
         )
+        if "radars" in info:
+            input_dict["radars"] = copy.deepcopy(info["radars"])
         lidar2ego = np.eye(4)
         lidar2ego[:3, :3] = pyquaternion.Quaternion(
             info["lidar2ego_rotation"]

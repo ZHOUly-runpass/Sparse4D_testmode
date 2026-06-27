@@ -83,6 +83,62 @@ def make_radar_shuffle(data, seed=42):
     return set_infos(data, infos)
 
 
+def _radar_tokens(info):
+    return tuple(
+        sorted(
+            (sensor, radar_info.get("sample_data_token"))
+            for sensor, radar_info in info.get("radars", {}).items()
+        )
+    )
+
+
+def validate_variants(source_data, variants):
+    source_infos = get_infos(source_data)
+    expected_count = len(source_infos)
+
+    for name, variant in variants.items():
+        actual_count = len(get_infos(variant))
+        if actual_count != expected_count:
+            raise AssertionError(
+                f"{name}: expected {expected_count} infos, got {actual_count}"
+            )
+
+    if not all("radars" not in info for info in get_infos(variants["cam_only"])):
+        raise AssertionError("cam_only must remove the radars field")
+
+    front_infos = get_infos(variants["radar_front_only"])
+    if not all(set(info.get("radars", {})) <= {"RADAR_FRONT"} for info in front_infos):
+        raise AssertionError("radar_front_only contains a non-front sensor")
+
+    drop_infos = get_infos(variants["radar_drop_all"])
+    if not all(info.get("radars") == {} for info in drop_infos):
+        raise AssertionError("radar_drop_all must contain empty radar mappings")
+
+    cam_radar_infos = get_infos(variants["cam_radar"])
+    if [_radar_tokens(info) for info in cam_radar_infos] != [
+        _radar_tokens(info) for info in source_infos
+    ]:
+        raise AssertionError("cam_radar must preserve source radar assignments")
+
+    shuffled_infos = get_infos(variants["radar_shuffle"])
+    if sorted(_radar_tokens(info) for info in shuffled_infos) != sorted(
+        _radar_tokens(info) for info in source_infos
+    ):
+        raise AssertionError("radar_shuffle must preserve the radar assignment multiset")
+
+    mismatch_count = sum(
+        _radar_tokens(source) != _radar_tokens(shuffled)
+        for source, shuffled in zip(source_infos, shuffled_infos)
+    )
+    if expected_count > 1 and mismatch_count == 0:
+        raise AssertionError("radar_shuffle did not change any assignment")
+
+    print(
+        f"[OK] validated {expected_count} infos; "
+        f"shuffle mismatches: {mismatch_count}"
+    )
+
+
 def process_one_split(input_pkl, output_dir, split_name):
     data = load_pickle(input_pkl)
 
@@ -93,6 +149,8 @@ def process_one_split(input_pkl, output_dir, split_name):
         "radar_drop_all": make_radar_drop_all(data),
         "radar_shuffle": make_radar_shuffle(data, seed=42),
     }
+
+    validate_variants(data, variants)
 
     for name, variant in variants.items():
         out_path = os.path.join(

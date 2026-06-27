@@ -1,6 +1,13 @@
 import os
 import pickle
+import sys
+from pathlib import Path
+
 import matplotlib.pyplot as plt
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
 from custom_projects.datasets.pipelines.loading_radar import LoadRadarPointsFromInfo
 
@@ -28,7 +35,13 @@ def main():
 
     for idx in range(3):
         info = infos[idx]
-        results = loader({"radars": info["radars"]})
+        results = loader(
+            {
+                "radars": info["radars"],
+                "lidar2ego_translation": info["lidar2ego_translation"],
+                "lidar2ego_rotation": info["lidar2ego_rotation"],
+            }
+        )
         points = results["radar_points"]
 
         plt.figure(figsize=(7, 7))
@@ -38,8 +51,8 @@ def main():
 
         plt.xlim(-60, 60)
         plt.ylim(-60, 60)
-        plt.xlabel("x in ego frame")
-        plt.ylabel("y in ego frame")
+        plt.xlabel("x in lidar frame")
+        plt.ylabel("y in lidar frame")
         plt.title(f"Radar BEV sample {idx}, count={points.shape[0]}")
         plt.grid(True)
 

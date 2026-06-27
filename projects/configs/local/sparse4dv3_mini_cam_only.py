@@ -479,20 +479,27 @@ data["samples_per_gpu"] = 1
 data["workers_per_gpu"] = 2
 
 data["train"]["version"] = "v1.0-mini"
-data["train"]["ann_file"] = anno_root + "nuscenes-mini_infos_train.pkl"
+data["train"]["ann_file"] = (
+    anno_root + "ablation/nuscenes-mini_infos_train_cam_only.pkl"
+)
 data["train"]["sequences_split_num"] = 1
 
 data["val"]["version"] = "v1.0-mini"
-data["val"]["ann_file"] = anno_root + "nuscenes-mini_infos_val.pkl"
+data["val"]["ann_file"] = (
+    anno_root + "ablation/nuscenes-mini_infos_val_cam_only.pkl"
+)
 data["val"]["tracking"] = False
 
 data["test"]["version"] = "v1.0-mini"
-data["test"]["ann_file"] = anno_root + "nuscenes-mini_infos_val.pkl"
+data["test"]["ann_file"] = (
+    anno_root + "ablation/nuscenes-mini_infos_val_cam_only.pkl"
+)
 data["test"]["tracking"] = False
 
 # ================== modality setting ==================
 modality_experiment = dict(
     name="cam_only",
+    stage="camera_baseline",
     use_camera=True,
     use_radar=False,
     radar_ablation="none",

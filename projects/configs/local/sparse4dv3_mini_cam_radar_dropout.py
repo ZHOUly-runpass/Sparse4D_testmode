@@ -56,6 +56,9 @@ LGD 1.89
 # ================ base config ===================
 plugin = True
 plugin_dir = "projects/mmdet3d_plugin/"
+custom_imports = dict(
+    imports=["custom_projects"], allow_failed_imports=False
+)
 dist_params = dict(backend="nccl")
 log_level = "INFO"
 work_dir = None
@@ -479,20 +482,73 @@ data["samples_per_gpu"] = 1
 data["workers_per_gpu"] = 2
 
 data["train"]["version"] = "v1.0-mini"
-data["train"]["ann_file"] = anno_root + "nuscenes-mini_infos_train.pkl"
+data["train"]["ann_file"] = (
+    anno_root + "ablation/nuscenes-mini_infos_train_cam_radar.pkl"
+)
 data["train"]["sequences_split_num"] = 1
 
 data["val"]["version"] = "v1.0-mini"
-data["val"]["ann_file"] = anno_root + "nuscenes-mini_infos_val.pkl"
+data["val"]["ann_file"] = (
+    anno_root + "ablation/nuscenes-mini_infos_val_cam_radar.pkl"
+)
 data["val"]["tracking"] = False
 
 data["test"]["version"] = "v1.0-mini"
-data["test"]["ann_file"] = anno_root + "nuscenes-mini_infos_val.pkl"
+data["test"]["ann_file"] = (
+    anno_root + "ablation/nuscenes-mini_infos_val_cam_radar.pkl"
+)
 data["test"]["tracking"] = False
+
+radar_point_cloud_range = (-60, -60, -5, 60, 60, 5)
+input_modality["use_radar"] = True
+train_radar_loader = dict(
+    type="LoadRadarPointsFromInfo",
+    data_root=data_root,
+    target_frame="lidar",
+    strict=True,
+    max_points=2000,
+    point_cloud_range=radar_point_cloud_range,
+    dropout_prob=0.5,
+)
+test_radar_loader = dict(
+    type="LoadRadarPointsFromInfo",
+    data_root=data_root,
+    target_frame="lidar",
+    strict=True,
+    max_points=2000,
+    point_cloud_range=radar_point_cloud_range,
+)
+train_pipeline.insert(-2, train_radar_loader)
+train_pipeline.insert(-1, dict(type="FormatRadarPoints"))
+train_pipeline[-1]["keys"].extend(
+    ["radar_points", "radar_valid", "radar_count"]
+)
+test_pipeline.insert(-2, test_radar_loader)
+test_pipeline.insert(-1, dict(type="FormatRadarPoints"))
+test_pipeline[-1]["keys"].extend(
+    ["radar_points", "radar_valid", "radar_count"]
+)
+data["train"]["pipeline"] = train_pipeline
+data["val"]["pipeline"] = test_pipeline
+data["test"]["pipeline"] = test_pipeline
+
+radar_ablation_ann_files = dict(
+    cam_radar=anno_root + "ablation/nuscenes-mini_infos_val_cam_radar.pkl",
+    radar_front_only=(
+        anno_root + "ablation/nuscenes-mini_infos_val_radar_front_only.pkl"
+    ),
+    radar_drop_all=(
+        anno_root + "ablation/nuscenes-mini_infos_val_radar_drop_all.pkl"
+    ),
+    radar_shuffle=(
+        anno_root + "ablation/nuscenes-mini_infos_val_radar_shuffle.pkl"
+    ),
+)
 
 # ================== modality setting ==================
 modality_experiment = dict(
     name="cam_radar_dropout",
+    stage="pipeline_smoke_test",
     use_camera=True,
     use_radar=True,
     radar_ablation="dropout",
